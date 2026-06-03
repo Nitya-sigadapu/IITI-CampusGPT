@@ -36,9 +36,18 @@ def remove_emojis(text):
     return emoji_pattern.sub(r'', text)
 
 working_dir = os.path.dirname(os.path.realpath(__file__))
-config_data = json.load(open(f"{working_dir}/config.json"))
-GROQ_API_KEY = config_data["GROQ_API_KEY"]
-os.environ["GROQ_API_KEY"] = GROQ_API_KEY
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
+
+if not GROQ_API_KEY:
+    try:
+        config_path = os.path.join(working_dir, "config.json")
+        with open(config_path, "r") as f:
+            config_data = json.load(f)
+            GROQ_API_KEY = config_data.get("GROQ_API_KEY")
+            if GROQ_API_KEY:
+                os.environ["GROQ_API_KEY"] = GROQ_API_KEY
+    except FileNotFoundError:
+        print("Warning: config.json not found and GROQ_API_KEY not set in environment.")
 
 app = FastAPI()
 

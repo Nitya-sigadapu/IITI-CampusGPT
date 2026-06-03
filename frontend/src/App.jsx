@@ -4,7 +4,7 @@ import { Send, UploadCloud, Loader2, User, Info, BookOpen, Building, Briefcase, 
 import ReactMarkdown from 'react-markdown';
 import './index.css';
 
-const API_URL = 'http://localhost:8000';
+const API_URL = 'https://campusgpt-tqd6.onrender.com';
 
 function App() {
   const [messages, setMessages] = useState([]);

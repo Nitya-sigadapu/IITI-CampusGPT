@@ -3,7 +3,7 @@ import json
 import pytesseract
 from PyPDF2 import PdfReader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
 from langchain_chroma import Chroma
 from langchain.schema import Document
 from langchain_groq import ChatGroq
@@ -56,7 +56,7 @@ def load_and_vectorize_pdf(file_path):
         metadata={"source": os.path.basename(file_path)}
     )
     
-    embeddings = HuggingFaceEmbeddings()
+    embeddings = FastEmbedEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
     
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=2000,
@@ -129,7 +129,7 @@ def main():
 
     try:
         print("Loading embedding model...")
-        embeddings = HuggingFaceEmbeddings()
+        embeddings = FastEmbedEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
         
         print("Loading and processing PDF documents...")
         documents = load_pdf_documents("data")

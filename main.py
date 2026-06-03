@@ -5,7 +5,7 @@ from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
 from langchain_chroma import Chroma
 from langchain_groq import ChatGroq
 from langchain.memory import ConversationBufferMemory
@@ -101,7 +101,7 @@ def contains_sensitive_topics(question):
 
 def setup_vectorstore():
     persist_directory = f"{working_dir}/vector_db_dir"
-    embeddings = HuggingFaceEmbeddings()
+    embeddings = FastEmbedEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
     vectorstore = Chroma(persist_directory=persist_directory,
                          embedding_function=embeddings)
     return vectorstore

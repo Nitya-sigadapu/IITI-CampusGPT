@@ -110,6 +110,16 @@ run.bat
 
 ---
 
+## Future Improvements
+
+- **Persistent Vector Storage**: Migrate ChromaDB to a managed cloud database (e.g., DataStax, Pinecone) to ensure persistent document memory across server restarts on free hosting tiers like Render.
+- **Batch Uploading & Directory Processing**: Allow administrators to upload entire `.zip` files or directories of PDFs at once rather than single file uploads.
+- **Role-Based Access Control (RBAC)**: Secure the upload endpoint behind an admin authentication layer so only verified college staff can modify the knowledge base.
+- **Enhanced OCR**: Integrate advanced OCR pipelines (e.g., Tesseract or AWS Textract) to extract text from handwritten notes and highly stylized scanned documents.
+- **Conversation Analytics**: Add an admin dashboard to visualize the most frequently asked questions and track chatbot usage statistics.
+
+---
+
 ## Contributing
 
 Contributions to improve response latency, expand OCR capabilities for scanned PDFs, and implement batch-uploading are welcome.

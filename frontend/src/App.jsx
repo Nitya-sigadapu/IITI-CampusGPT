@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
-import { Send, UploadCloud, Loader2, User, Info, BookOpen, Building, Briefcase } from 'lucide-react';
+import { Send, UploadCloud, Loader2, User, Info, BookOpen, Building, Briefcase, Trash2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import './index.css';
 
@@ -162,6 +162,15 @@ function App() {
 
       {/* Main Chat Area */}
       <main className="main-chat">
+        {messages.length > 0 && (
+          <button 
+            className="clear-chat-btn"
+            onClick={() => setMessages([])}
+            title="Clear Chat"
+          >
+            <Trash2 size={18} />
+          </button>
+        )}
         <div className="chat-history">
           {messages.length === 0 ? (
             <div className="welcome-container">

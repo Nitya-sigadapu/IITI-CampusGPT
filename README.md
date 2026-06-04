@@ -1,89 +1,161 @@
-# CampusGPT - IIT Indore RAG Chatbot
+# CampusGPT – IIT Indore RAG Chatbot
 
-An enterprise-grade, highly robust Retrieval-Augmented Generation (RAG) chatbot designed exclusively for IIT Indore. This system uses advanced vector embeddings and large language models (LLMs) to provide strictly factual, context-aware answers to student and faculty queries, backed solely by official college documentation.
+🔗 **Live Demo:** https://campus-gpt-wajl.vercel.app
 
----
+CampusGPT is a Retrieval-Augmented Generation (RAG) chatbot designed for IIT Indore. The system enables students and faculty to query institutional documents using natural language and receive context-aware responses grounded in uploaded PDFs rather than general internet knowledge.
 
-## Key Features
-
-- **Strict Factual Guardrails:** The chatbot is engineered to refuse subjective opinions, hallucinated facts, and out-of-scope questions (e.g., "Who won the IPL?"). It only answers based on the uploaded official documents.
-- **Automated Relevance Filtering (Pre-indexing):** Uses an LLM check during document upload to instantly reject non-academic or irrelevant PDFs before they pollute the vector database.
-- **Robust File Handling:** Enforces a strict 10MB file size limit and strict PDF-only checks on both the React frontend and FastAPI backend to prevent server crashes.
-- **Modern React Frontend:** A sleek, responsive UI built with Vite and React, featuring a professional matte aesthetic tailored for IIT Indore.
-- **Emoji Support:** The backend and frontend fully support UTF-8 encoding, allowing students to use emojis in their queries seamlessly.
+The application combines semantic search, vector embeddings, and Large Language Models (LLMs) to provide accurate answers from academic handbooks, hostel policies, placement reports, admission brochures, and other official institute documents.
 
 ---
 
-## Evaluation & Accuracy Framework
+## Features
 
-CampusGPT comes with a state-of-the-art testing suite designed to catch the edge cases that break standard RAG applications. The system consistently scores highly (9.0+/10) on factual accuracy tests evaluated by an automated LLM Judge.
+### Document-Based Question Answering
 
-### 1. Prompt & Context Edge Cases
-The framework tests 30 advanced FAANG-level scenarios, including:
-- **Pronoun Resolution:** Retaining context across multi-turn conversations.
-- **Jailbreak Attempts:** Refusing malicious prompt overrides.
-- **Synonyms & Case Sensitivity:** Handling varied inputs correctly.
-- **Multilingual Support:** Successfully parsing and retrieving context from non-English queries (e.g., Hindi).
+* Upload PDF documents and query them using natural language.
+* Responses are generated using retrieved document context rather than pretrained model knowledge.
+* Supports multi-turn conversational interactions.
 
-To run these tests:
-```bash
-venv\Scripts\python.exe evaluate_rag.py
+### Semantic Search Pipeline
+
+* PDF text extraction and preprocessing.
+* Recursive text chunking using LangChain.
+* Vector embedding generation using HuggingFace embeddings.
+* Semantic retrieval using ChromaDB.
+
+### Guardrails & Validation
+
+* PDF-only file validation.
+* File size restrictions to prevent resource abuse.
+* Out-of-scope query detection.
+* Reduced hallucinations through retrieval-constrained generation.
+
+### Modern Web Interface
+
+* Responsive React frontend built with Vite.
+* Real-time conversational chat interface.
+* Drag-and-drop PDF upload support.
+* Clean and intuitive user experience.
+
+---
+
+## System Architecture
+
+```text
+PDF Documents
+      │
+      ▼
+Text Extraction
+      │
+      ▼
+Chunking (LangChain)
+      │
+      ▼
+Embeddings (all-MiniLM-L6-v2)
+      │
+      ▼
+ChromaDB Vector Store
+      │
+      ▼
+Retriever
+      │
+      ▼
+Groq LLM (Llama 3.3 70B)
+      │
+      ▼
+Context-Aware Response
 ```
-Results are automatically saved to `evaluation_results.json`.
 
-### 2. Document State Edge Cases
-The automated testing script generates PDFs on the fly using `fpdf2` to test the system's architectural limits:
-- **Prompt Injection PDFs:** Verifies the system ignores malicious instructions hidden inside uploaded PDFs.
-- **Contradictory Information:** Evaluates how the bot handles uploading two rulebooks with conflicting facts.
-- **Chunk Boundary Failures:** Tests the text-splitter's ability to retain context across large whitespace gaps.
-- **Table Extraction:** Ensures tabular data is not mangled during the vectorization process.
+---
 
-To run these tests:
-```bash
-venv\Scripts\python.exe evaluate_document_state.py
-```
-Results are automatically saved to `document_test_results.json`.
+## Evaluation Framework
+
+The project includes a dedicated testing suite for evaluating retrieval quality and response reliability.
+
+### Retrieval Tests
+
+* Multi-hop reasoning
+* Long-context retrieval
+* Typographical errors
+* Synonym matching
+* Context retention across conversations
+
+### Robustness Tests
+
+* Prompt injection attempts
+* Contradictory document retrieval
+* Empty retrieval scenarios
+* Hallucination detection
+* Out-of-scope query handling
+
+### Edge Cases
+
+* Chunk boundary failures
+* Duplicate document uploads
+* Ambiguous questions
+* Pronoun resolution
+* Document update consistency
+
+Evaluation results are automatically logged for further analysis.
 
 ---
 
 ## Tech Stack
 
-- **Frontend:** React (Vite), JavaScript, Vanilla CSS
-- **Backend:** FastAPI, Python
-- **LLM Inference:** Groq (`llama-3.3-70b-versatile`)
-- **Vector Database:** ChromaDB
-- **Embeddings:** HuggingFace (`all-MiniLM-L6-v2`)
-- **Document Processing:** PyPDF2, LangChain `RecursiveCharacterTextSplitter`
+### Frontend
+
+* React
+* Vite
+* JavaScript
+* CSS
+
+### Backend
+
+* FastAPI
+* Python
+
+### AI & Retrieval
+
+* LangChain
+* ChromaDB
+* HuggingFace Embeddings (all-MiniLM-L6-v2)
+* Groq API (Llama 3.3 70B)
+
+### Document Processing
+
+* PyPDF2
+* RecursiveCharacterTextSplitter
 
 ---
 
-## Installation & Setup
+## Installation
 
-### 1. Clone the Repository
+### Clone Repository
+
 ```bash
 git clone https://github.com/Nitya-sigadapu/CampusGPT.git
 cd CampusGPT
 ```
 
-### 2. Backend Setup
+### Backend Setup
+
 ```bash
-# Create and activate virtual environment
 python -m venv venv
 venv\Scripts\activate
 
-# Install dependencies
 pip install -r requirements.txt
 ```
 
-Create a `config.json` file in the root directory for your API keys:
+Create a `config.json` file:
+
 ```json
 {
-  "GROQ_API_KEY": "gsk_your_groq_api_key_here"
+  "GROQ_API_KEY": "your_groq_api_key"
 }
 ```
 
-### 3. Frontend Setup
-Open a new terminal window:
+### Frontend Setup
+
 ```bash
 cd frontend
 npm install
@@ -93,35 +165,49 @@ npm install
 
 ## Running the Application
 
-For development, you can start both the frontend and backend simultaneously using the provided batch script (Windows):
+### Backend
+
+```bash
+python main.py
+```
+
+### Frontend
+
+```bash
+npm run dev
+```
+
+Or use:
 
 ```bash
 run.bat
 ```
-(This will start FastAPI on port 8000 and the React dev server on port 5173).
+
+to start both services simultaneously.
 
 ---
 
 ## Security & Privacy
 
-- All document embeddings are stored locally in the `vector_db_dir/`.
-- Uploaded PDFs are stored locally in the `data/` folder.
-- Both folders, along with your `config.json`, are explicitly ignored in `.gitignore` to prevent data leaks.
+* Uploaded documents are stored locally.
+* Vector embeddings remain within the local vector database.
+* API keys are excluded through `.gitignore`.
+* File validation is performed on both frontend and backend.
 
 ---
 
 ## Future Improvements
 
-- **Persistent Vector Storage**: Migrate ChromaDB to a managed cloud database (e.g., DataStax, Pinecone) to ensure persistent document memory across server restarts on free hosting tiers like Render.
-- **Batch Uploading & Directory Processing**: Allow administrators to upload entire `.zip` files or directories of PDFs at once rather than single file uploads.
-- **Role-Based Access Control (RBAC)**: Secure the upload endpoint behind an admin authentication layer so only verified college staff can modify the knowledge base.
-- **Enhanced OCR**: Integrate advanced OCR pipelines (e.g., Tesseract or AWS Textract) to extract text from handwritten notes and highly stylized scanned documents.
-- **Conversation Analytics**: Add an admin dashboard to visualize the most frequently asked questions and track chatbot usage statistics.
+* PostgreSQL + pgvector integration
+* OCR support for scanned PDFs
+* Role-Based Access Control (RBAC)
+* Citation-based answers
+* Conversation analytics dashboard
+* Batch document ingestion
+* Cloud vector database support
 
 ---
 
-## Contributing
+## License
 
-Contributions to improve response latency, expand OCR capabilities for scanned PDFs, and implement batch-uploading are welcome.
-
-**License:** MIT
+This project is licensed under the MIT License.

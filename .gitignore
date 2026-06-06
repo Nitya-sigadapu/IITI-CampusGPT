@@ -189,6 +189,7 @@ project_documentation.md
 data/
 vector_db_dir/
 *.pdf
+!default_data/*.pdf
 
 # Ignore evaluation results
 evaluation_results.json

@@ -1,3 +1,4 @@
+# Reload trigger
 import os
 import json
 import re
@@ -63,32 +64,32 @@ class MessageRequest(BaseModel):
     message: str
     chat_history: list = []
 
-DEFAULT_SYSTEM_PROMPT = """You are a **specialized AI assistant** for **IIT Indore**. Your responses must be **accurate, concise, and strictly based on the provided context (which contains data from the user's uploaded PDFs and IIT Indore's knowledge base)**.
+DEFAULT_SYSTEM_PROMPT = """You are a **specialized AI assistant** for **IIT Indore**. Your responses must be **accurate, concise, and helpful**.
 
 Your goals:
-1. Provide **clear, concise, helpful answers** directly addressing the user's query using the provided context.
-2. If the user asks about a PDF they uploaded, assume the 'Context' contains the contents of that PDF.
-3. Suggest **relevant IIT Indore services** only when appropriate and helpful.
-4. Maintain a **warm, professional, and empathetic tone**, occasionally using 1-2 relevant emojis.
+1. Provide **clear, concise, helpful answers** directly addressing the user's query.
+2. If the 'Context' contains relevant information (e.g., from uploaded PDFs), prioritize using it to formulate your answer.
+3. If the user asks general questions about IIT Indore that are not in the context, you may use your internal knowledge about IIT Indore to answer them.
+4. Suggest **relevant IIT Indore services** only when appropriate and helpful.
+5. Maintain a **warm, professional, and empathetic tone**, occasionally using 1-2 relevant emojis.
 
 ---
-### **CONTEXT & RESPONSE RULES**
-1. The 'Context' section below contains the text from the documents/PDFs the user has uploaded. If the user asks to summarize or extract information from their PDF, use the Context to do so directly.
-2. If the provided context contains relevant information, build your answer entirely on it.
-3. If the context does not contain the answer, politely inform the user that you don't have that information in the provided documents.
-4. Always use bullet points for readability when listing items or summarizing.
-5. Do NOT ask unnecessary follow-up questions like "Are you a prospective student?" unless you absolutely need that information to answer their specific question.
+### **CONTEXT & CONFLICT RESOLUTION RULES**
+1. The 'Context' section below contains text from uploaded documents, along with their 'Source' filenames.
+2. **CONFLICT RESOLUTION:** If multiple sources provide contradictory information, you **MUST prioritize the information from user-uploaded PDFs** over the default `IIT_Indore_Handbook.pdf` or any default rules. 
+3. **CITATIONS ARE MANDATORY:** If you use information from the Context to answer the question, you **MUST** include inline citations using the exact source filename (e.g., "Based on [Source: rules.pdf]...").
+4. If you use your internal knowledge instead of the Context, do not include any citations.
+5. Always use bullet points for readability when listing items or summarizing.
+6. Do NOT ask unnecessary follow-up questions unless absolutely needed.
 """
 
 DEFAULT_NEGATIVE_PROMPT = """
-- Do **NOT** provide any information that is **not supported by verified IIT Indore data** or the provided system context.
+- Do **NOT** provide any information that is **not supported by verified IIT Indore data** or your internal knowledge of IIT Indore.
 - Do **NOT** imply you are an **employee, representative, agent, or official spokesperson** of IIT Indore.
 - Do **NOT** fabricate or invent IIT Indore **services, features, pricing, policies, internal processes, or proprietary details**.
 - Do **NOT** offer **legal, financial, medical, or other unrelated professional advice** outside IIT Indore's domain.
-- Do **NOT** respond to topics **outside IIT Indore's scope**; instead, politely state that the relevant data is not available.
+- Do **NOT** respond to topics **completely outside IIT Indore's scope**; instead, politely state that you are specialized in IIT Indore and can only assist with related topics.
 - Do **NOT** guess or assume **confidential, internal, or sensitive business information** about IIT Indore.
-- Do **NOT** generate speculative, generic, or hypothetical business advice that is **not grounded in IIT Indore's verified information**.
-- Do **NOT** use, cite, or reference **external sources, external knowledge, or outside databases** beyond the authorized IIT Indore context.
 - Do **NOT** insert personal opinions, assumptions, unfounded claims, or subjective judgments.
 - Do **NOT** mislead the user with unsupported or speculative responses.
 - Do **NOT** use an unprofessional, casual, or overly familiar tone; maintain professionalism at all times.
@@ -101,6 +102,21 @@ def contains_sensitive_topics(question):
 
 def setup_vectorstore():
     persist_directory = f"{working_dir}/vector_db_dir"
+    
+    # Check if vector DB is missing or empty, and initialize from default_data if so
+    if not os.path.exists(persist_directory) or not os.listdir(persist_directory):
+        print("Vector DB is empty. Initializing with default PDFs...")
+        default_dir = os.path.join(working_dir, "default_data")
+        if os.path.exists(default_dir):
+            for filename in os.listdir(default_dir):
+                if filename.lower().endswith(".pdf"):
+                    try:
+                        file_path = os.path.join(default_dir, filename)
+                        print(f"Loading default document: {filename}")
+                        load_and_vectorize_pdf(file_path)
+                    except Exception as e:
+                        print(f"Failed to process default document {filename}: {e}")
+
     embeddings = FastEmbedEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
     vectorstore = Chroma(persist_directory=persist_directory,
                          embedding_function=embeddings)
@@ -141,6 +157,11 @@ Answer:"""
         return_messages = True
     )
     
+    doc_prompt = PromptTemplate(
+        template="Source: {source}\nContent: {page_content}",
+        input_variables=["page_content", "source"]
+    )
+    
     chain = ConversationalRetrievalChain.from_llm(
         llm = llm,
         retriever = retriever,
@@ -148,7 +169,10 @@ Answer:"""
         memory = memory,
         verbose = True,
         return_source_documents = True,
-        combine_docs_chain_kwargs={"prompt": prompt}
+        combine_docs_chain_kwargs={
+            "prompt": prompt,
+            "document_prompt": doc_prompt
+        }
     )
     return chain
 
@@ -164,7 +188,19 @@ async def chatbot(request: MessageRequest):
         return {"response": "It seems you may be asking questions outside my context, please ask questions related to IIT Indore only."}
     
     try:
-        response = conversational_chain({"question": message})["answer"]
+        result = conversational_chain({"question": message})
+        response = result["answer"]
+        
+        # Extract unique source document names
+        source_docs = result.get("source_documents", [])
+        sources = set([doc.metadata.get("source") for doc in source_docs if doc.metadata.get("source")])
+        
+        # Append references if sources were retrieved and cited
+        if sources and "[Source:" in response:
+            response += "\n\n**References:**\n"
+            for source in sources:
+                response += f"- {source}\n"
+                
         return {"response": response}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -193,6 +229,24 @@ async def upload_pdf(file: UploadFile = File(...)):
         return {"message": f"Successfully uploaded and processed {file.filename}"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing PDF: {str(e)}")
+
+@app.get("/documents")
+async def get_documents():
+    documents = set()
+    data_dir = f"{working_dir}/data"
+    default_dir = f"{working_dir}/default_data"
+    
+    if os.path.exists(data_dir):
+        for f in os.listdir(data_dir):
+            if f.lower().endswith(".pdf"):
+                documents.add(f)
+                
+    if os.path.exists(default_dir):
+        for f in os.listdir(default_dir):
+            if f.lower().endswith(".pdf"):
+                documents.add(f)
+                
+    return {"documents": sorted(list(documents))}
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

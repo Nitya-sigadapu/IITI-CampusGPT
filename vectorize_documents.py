@@ -9,7 +9,10 @@ from langchain.schema import Document
 from langchain_groq import ChatGroq
 from langchain.schema import HumanMessage
 
-pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+import sys
+
+if sys.platform.startswith('win'):
+    pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
 def check_relevance_with_llm(text):
     try:

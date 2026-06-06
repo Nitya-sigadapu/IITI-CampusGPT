@@ -2,10 +2,9 @@
 
 **Live Demo:** [CampusGPT](https://campus-gpt-wajl.vercel.app)
 
-CampusGPT is a Retrieval-Augmented Generation (RAG) chatbot designed for IIT Indore. The system enables students and faculty to query institutional documents using natural language and receive context-aware responses grounded in uploaded PDFs rather than general internet knowledge.
+An enterprise-grade, highly robust Retrieval-Augmented Generation (RAG) chatbot designed exclusively for IIT Indore. The system enables students and faculty to query institutional documents using natural language and receive strictly factual, context-aware responses backed solely by official college documentation, rather than general internet knowledge.
 
 The application combines semantic search, vector embeddings, and Large Language Models (LLMs) to provide accurate answers from academic handbooks, hostel policies, placement reports, admission brochures, and other official institute documents.
-
 ---
 
 ## Features
@@ -37,68 +36,7 @@ The application combines semantic search, vector embeddings, and Large Language 
 * Drag-and-drop PDF upload support.
 * Clean and intuitive user experience.
 
----
 
-## System Architecture
-
-```text
-PDF Documents
-      │
-      ▼
-Text Extraction
-      │
-      ▼
-Chunking (LangChain)
-      │
-      ▼
-Embeddings (all-MiniLM-L6-v2)
-      │
-      ▼
-ChromaDB Vector Store
-      │
-      ▼
-Retriever
-      │
-      ▼
-Groq LLM (Llama 3.3 70B)
-      │
-      ▼
-Context-Aware Response
-```
-
----
-
-## Evaluation Framework
-
-The project includes a dedicated testing suite for evaluating retrieval quality and response reliability.
-
-### Retrieval Tests
-
-* Multi-hop reasoning
-* Long-context retrieval
-* Typographical errors
-* Synonym matching
-* Context retention across conversations
-
-### Robustness Tests
-
-* Prompt injection attempts
-* Contradictory document retrieval
-* Empty retrieval scenarios
-* Hallucination detection
-* Out-of-scope query handling
-
-### Edge Cases
-
-* Chunk boundary failures
-* Duplicate document uploads
-* Ambiguous questions
-* Pronoun resolution
-* Document update consistency
-
-Evaluation results are automatically logged for further analysis.
-
----
 
 ## Tech Stack
 

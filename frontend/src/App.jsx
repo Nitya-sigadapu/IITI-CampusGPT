@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
-import { Send, UploadCloud, Loader2, User, Info, BookOpen, Building, Briefcase, Trash2 } from 'lucide-react';
+import { Send, UploadCloud, Loader2, User, Info, BookOpen, Building, Briefcase, Trash2, FileText } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import './index.css';
 
-const API_URL = 'https://campusgpt-tqd6.onrender.com';
+const API_URL = import.meta.env.DEV ? 'http://localhost:8000' : 'https://campusgpt-tqd6.onrender.com';
 
 function App() {
   const [messages, setMessages] = useState([]);
@@ -12,8 +12,22 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState(null);
+  const [uploadedDocs, setUploadedDocs] = useState([]);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
+
+  const fetchDocuments = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/documents`);
+      setUploadedDocs(response.data.documents || []);
+    } catch (error) {
+      console.error('Failed to fetch documents:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchDocuments();
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -76,6 +90,7 @@ function App() {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       setUploadStatus({ type: 'success', text: response.data.message });
+      fetchDocuments(); // Refresh the document list
       setTimeout(() => setUploadStatus(null), 5000);
     } catch (error) {
       setUploadStatus({ 
@@ -151,6 +166,32 @@ function App() {
               <br/>• Hostel Rules
               <br/>• Admission Brochures
             </p>
+          </div>
+
+          <div style={{ marginTop: '2rem', flexGrow: 1, overflowY: 'auto' }}>
+            <h2 className="section-title">Current Documents</h2>
+            {uploadedDocs.length === 0 ? (
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>No documents available.</p>
+            ) : (
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                {uploadedDocs.map((doc, idx) => (
+                  <li key={idx} style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '0.5rem', 
+                    fontSize: '0.8rem',
+                    color: 'var(--text-muted)',
+                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                    padding: '0.5rem',
+                    borderRadius: '6px',
+                    wordBreak: 'break-all'
+                  }}>
+                    <FileText size={14} style={{ flexShrink: 0, color: 'var(--primary)' }} />
+                    <span>{doc}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
           <div className="status-badge">

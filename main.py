@@ -77,7 +77,7 @@ Your goals:
 ### **CONTEXT & CONFLICT RESOLUTION RULES**
 1. The 'Context' section below contains text from uploaded documents, along with their 'Source' filenames.
 2. **CONFLICT RESOLUTION:** If multiple sources provide contradictory information, you **MUST prioritize the information from user-uploaded PDFs** over the default `IIT_Indore_Handbook.pdf` or any default rules. 
-3. **CITATIONS ARE MANDATORY:** If you use information from the Context to answer the question, you **MUST** include inline citations using the exact source filename (e.g., "Based on [Source: rules.pdf]...").
+3. **CITATIONS ARE MANDATORY:** If you use information from the Context to answer the question, you **MUST** include inline citations using the exact source filename and page number (e.g., "Based on [Source: rules.pdf, Page: 5]...").
 4. If you use your internal knowledge instead of the Context, do not include any citations.
 5. Always use bullet points for readability when listing items or summarizing.
 6. Do NOT ask unnecessary follow-up questions unless absolutely needed.
@@ -158,8 +158,8 @@ Answer:"""
     )
     
     doc_prompt = PromptTemplate(
-        template="Source: {source}\nContent: {page_content}",
-        input_variables=["page_content", "source"]
+        template="Source: {source}, Page: {page}\nContent: {page_content}",
+        input_variables=["page_content", "source", "page"]
     )
     
     chain = ConversationalRetrievalChain.from_llm(
@@ -191,15 +191,29 @@ async def chatbot(request: MessageRequest):
         result = conversational_chain({"question": message})
         response = result["answer"]
         
-        # Extract unique source document names
+        # Extract unique source document names and pages
         source_docs = result.get("source_documents", [])
-        sources = set([doc.metadata.get("source") for doc in source_docs if doc.metadata.get("source")])
+        
+        # Group pages by source
+        source_pages = {}
+        for doc in source_docs:
+            src = doc.metadata.get("source")
+            page = doc.metadata.get("page")
+            if src:
+                if src not in source_pages:
+                    source_pages[src] = set()
+                if page:
+                    source_pages[src].add(str(page))
         
         # Append references if sources were retrieved and cited
-        if sources and "[Source:" in response:
+        if source_pages and "[Source:" in response:
             response += "\n\n**References:**\n"
-            for source in sources:
-                response += f"- {source}\n"
+            for source, pages in source_pages.items():
+                if pages:
+                    pages_str = ", ".join(sorted(list(pages)))
+                    response += f"- {source} (Pages: {pages_str})\n"
+                else:
+                    response += f"- {source}\n"
                 
         return {"response": response}
     except Exception as e:

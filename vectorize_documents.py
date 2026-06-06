@@ -42,22 +42,22 @@ def load_and_vectorize_pdf(file_path):
     print(f"Processing {file_path}...")
     
     reader = PdfReader(file_path)
+    documents = []
     text = ""
-    for page in reader.pages:
+    for i, page in enumerate(reader.pages):
         extracted = page.extract_text()
         if extracted:
             text += extracted + "\n"
+            documents.append(Document(
+                page_content=extracted,
+                metadata={"source": os.path.basename(file_path), "page": i + 1}
+            ))
             
     if not text.strip():
         raise ValueError("Could not extract any readable text from this PDF. It may be a scanned document or an image.")
         
     if not check_relevance_with_llm(text):
         raise ValueError("The uploaded document does not appear to be related to IIT Indore or an academic context.")
-    
-    doc = Document(
-        page_content=text,
-        metadata={"source": os.path.basename(file_path)}
-    )
     
     embeddings = FastEmbedEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
     
@@ -68,7 +68,7 @@ def load_and_vectorize_pdf(file_path):
         separators=["\n\n", "\n", " ", ""]
     )
     
-    text_chunks = text_splitter.split_documents([doc])
+    text_chunks = text_splitter.split_documents(documents)
         
     print(f"Split document into {len(text_chunks)} chunks")
     
@@ -93,11 +93,16 @@ def load_pdf_documents(directory):
             file_path = os.path.join(directory, pdf_file)
             
             reader = PdfReader(file_path)
+            file_documents = []
             text = ""
-            for page in reader.pages:
+            for i, page in enumerate(reader.pages):
                 extracted = page.extract_text()
                 if extracted:
                     text += extracted + "\n"
+                    file_documents.append(Document(
+                        page_content=extracted,
+                        metadata={"source": pdf_file, "page": i + 1}
+                    ))
             
             if not text.strip():
                 print(f"Skipping {pdf_file}: No readable text found.")
@@ -107,11 +112,7 @@ def load_pdf_documents(directory):
                 print(f"Skipping {pdf_file}: Not related to IIT Indore or academic context.")
                 continue
 
-            doc = Document(
-                page_content=text,
-                metadata={"source": pdf_file}
-            )
-            documents.append(doc)
+            documents.extend(file_documents)
             print(f"Successfully processed {pdf_file}")
             
         except Exception as e:

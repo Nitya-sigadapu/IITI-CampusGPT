@@ -24,6 +24,7 @@ The application combines semantic search, vector embeddings, and Large Language 
 
 ### Guardrails & Validation
 
+* Strict citation-based responses referencing specific uploaded documents.
 * PDF-only file validation.
 * File size restrictions to prevent resource abuse.
 * Out-of-scope query detection.
@@ -139,7 +140,6 @@ to start both services simultaneously.
 * PostgreSQL + pgvector integration
 * OCR support for scanned PDFs
 * Role-Based Access Control (RBAC)
-* Citation-based answers
 * Conversation analytics dashboard
 * Batch document ingestion
 * Cloud vector database support

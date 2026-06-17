@@ -137,6 +137,13 @@ def setup_vectorstore():
                             load_and_vectorize_pdf(file_path)
                         except Exception as e:
                             print(f"Failed to process document {filename}: {e}")
+                            # Clean up old invalid files from the persistent data directory
+                            if target_dir == os.path.join(working_dir, "data"):
+                                try:
+                                    os.remove(file_path)
+                                    print(f"Deleted invalid file from disk: {filename}")
+                                except Exception as del_err:
+                                    print(f"Could not delete {filename}: {del_err}")
 
     vectorstore = Chroma(persist_directory=persist_directory,
                          embedding_function=embeddings)

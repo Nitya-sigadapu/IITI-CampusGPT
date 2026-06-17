@@ -60,6 +60,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/")
+async def root():
+    return {"status": "ok", "message": "CampusGPT API is running"}
+
 class MessageRequest(BaseModel):
     message: str
     chat_history: list = []

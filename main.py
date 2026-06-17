@@ -102,22 +102,38 @@ def contains_sensitive_topics(question):
 
 def setup_vectorstore():
     persist_directory = f"{working_dir}/vector_db_dir"
-    
-    # Check if vector DB is missing or empty, and initialize from default_data if so
-    if not os.path.exists(persist_directory) or not os.listdir(persist_directory):
-        print("Vector DB is empty. Initializing with default PDFs...")
-        default_dir = os.path.join(working_dir, "default_data")
-        if os.path.exists(default_dir):
-            for filename in os.listdir(default_dir):
-                if filename.lower().endswith(".pdf"):
-                    try:
-                        file_path = os.path.join(default_dir, filename)
-                        print(f"Loading default document: {filename}")
-                        load_and_vectorize_pdf(file_path)
-                    except Exception as e:
-                        print(f"Failed to process default document {filename}: {e}")
-
     embeddings = FastEmbedEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+    
+    # Check if DB exists and has outdated metadata
+    if os.path.exists(persist_directory) and os.listdir(persist_directory):
+        try:
+            temp_vectorstore = Chroma(persist_directory=persist_directory, embedding_function=embeddings)
+            sample = temp_vectorstore.get(limit=1)
+            if sample and sample.get("metadatas") and len(sample["metadatas"]) > 0:
+                meta = sample["metadatas"][0]
+                if meta and "page" not in meta:
+                    print("Outdated vector database detected (missing 'page' metadata). Rebuilding...")
+                    import shutil
+                    shutil.rmtree(persist_directory)
+        except Exception as e:
+            print(f"Error checking vector db: {e}")
+
+    # Check if vector DB is missing or empty, and initialize from default_data and data if so
+    if not os.path.exists(persist_directory) or not os.listdir(persist_directory):
+        print("Vector DB is empty or outdated. Initializing with PDFs...")
+        dirs_to_load = [os.path.join(working_dir, "default_data"), os.path.join(working_dir, "data")]
+        for target_dir in dirs_to_load:
+            if os.path.exists(target_dir):
+                for filename in os.listdir(target_dir):
+                    if filename.lower().endswith(".pdf"):
+                        try:
+                            file_path = os.path.join(target_dir, filename)
+                            print(f"Loading document: {filename}")
+                            from vectorize_documents import load_and_vectorize_pdf
+                            load_and_vectorize_pdf(file_path)
+                        except Exception as e:
+                            print(f"Failed to process document {filename}: {e}")
+
     vectorstore = Chroma(persist_directory=persist_directory,
                          embedding_function=embeddings)
     return vectorstore
@@ -197,8 +213,9 @@ async def chatbot(request: MessageRequest):
         # Group pages by source
         source_pages = {}
         for doc in source_docs:
-            src = doc.metadata.get("source")
-            page = doc.metadata.get("page")
+            meta = doc.metadata or {}
+            src = meta.get("source")
+            page = meta.get("page")
             if src:
                 if src not in source_pages:
                     source_pages[src] = set()

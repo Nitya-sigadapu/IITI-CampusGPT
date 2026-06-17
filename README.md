@@ -1,6 +1,6 @@
 # CampusGPT – IIT Indore RAG Chatbot
 
-**Live Demo:** [CampusGPT](https://campus-gpt-wajl.vercel.app)
+**Live Demo:** [IITI-CampusGPT](https://campus-gpt-wajl.vercel.app)
 
 An enterprise-grade, highly robust Retrieval-Augmented Generation (RAG) chatbot designed exclusively for IIT Indore. The system enables students and faculty to query institutional documents using natural language and receive strictly factual, context-aware responses backed solely by official college documentation, rather than general internet knowledge.
 

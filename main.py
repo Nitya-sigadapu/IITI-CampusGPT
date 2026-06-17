@@ -275,12 +275,15 @@ async def upload_pdf(file: UploadFile = File(...)):
     try:
         load_and_vectorize_pdf(file_path)
         
-        global vectorstore, conversational_chain
-        vectorstore = setup_vectorstore()
-        conversational_chain = chat_chain(vectorstore)
+        # We start a background rebuild so the new file gets added to the DB without blocking the API
+        import threading
+        threading.Thread(target=initialize_vector_db).start()
 
         return {"message": f"Successfully uploaded and processed {file.filename}"}
     except Exception as e:
+        # Delete the file if validation fails so it doesn't appear in the sidebar
+        if os.path.exists(file_path):
+            os.remove(file_path)
         raise HTTPException(status_code=500, detail=f"Error processing PDF: {str(e)}")
 
 @app.get("/documents")

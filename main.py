@@ -196,12 +196,30 @@ Answer:"""
     )
     return chain
 
-# Initialize globally to avoid recreating on each request
-vectorstore = setup_vectorstore()
-conversational_chain = chat_chain(vectorstore)
+# Initialize via background thread to prevent Render health check timeout
+is_initializing = False
+vectorstore = None
+conversational_chain = None
+
+def initialize_vector_db():
+    global is_initializing, vectorstore, conversational_chain
+    is_initializing = True
+    try:
+        vectorstore = setup_vectorstore()
+        conversational_chain = chat_chain(vectorstore)
+    finally:
+        is_initializing = False
+
+@app.on_event("startup")
+def startup_event():
+    import threading
+    threading.Thread(target=initialize_vector_db).start()
 
 @app.post("/chat")
 async def chatbot(request: MessageRequest):
+    if is_initializing or conversational_chain is None:
+        return {"response": "The knowledge base is currently initializing or updating. Please try again in a minute."}
+
     message = request.message
 
     if contains_sensitive_topics(message):
